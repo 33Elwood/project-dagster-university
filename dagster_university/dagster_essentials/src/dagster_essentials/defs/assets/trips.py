@@ -1,6 +1,6 @@
 # src/dagster_essentials/defs/assets/trips.py
 import requests
-# from dagster_essentials.defs.assets import constants # <---- Import commented out here
+from dagster_essentials.defs.assets import constants # <---- Import commented out here
 import dagster as dg
 
 @dg.asset
