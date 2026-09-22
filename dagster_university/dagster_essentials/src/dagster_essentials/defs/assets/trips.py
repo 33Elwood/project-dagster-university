@@ -1,14 +1,10 @@
 # src/dagster_essentials/defs/assets/trips.py
 
-import duckdb
-import os
-import dagster as dg
-from dagster._utils.backoff import backoff
-
-
 import requests
-from dagster_essentials.defs.assets import constants # <---- Import commented out here
+from dagster_duckdb import DuckDBResource
+from dagster_essentials.defs.assets import constants
 import dagster as dg
+
 
 @dg.asset
 def taxi_trips_file() -> None:
@@ -41,14 +37,11 @@ def taxi_zones_file() -> None:
 
 # src/dagster_essentials/defs/assets/trips.py
 @dg.asset(
-    deps=["taxi_trips_file"]
+    deps=["taxi_trips_file"],
 )
-def taxi_trips() -> None:
-    """
-      The raw taxi trips dataset, loaded into a DuckDB database
-    """
+def taxi_trips(database: DuckDBResource) -> None:
     query = """
-        create or replace table trips as (
+        create or replace table taxi_trips as (
           select
             VendorID as vendor_id,
             PULocationID as pickup_zone_id,
@@ -64,16 +57,8 @@ def taxi_trips() -> None:
         );
     """
 
-    conn = backoff(
-        fn=duckdb.connect,
-        retry_on=(RuntimeError, duckdb.IOException),
-        kwargs={
-            "database": os.getenv("DUCKDB_DATABASE"),
-        },
-        max_retries=10,
-    )
-    conn.execute(query)
-
+    with database.get_connection() as conn:
+        conn.execute(query)
 
 
 
@@ -81,8 +66,8 @@ def taxi_trips() -> None:
 @dg.asset(
     deps=["taxi_zones_file"]
 )
-def taxi_zones() -> None:
-    query = f"""
+def taxi_zones(database: DuckDBResource) -> None:
+    query = """
         create or replace table zones as (
             select
                 LocationID as zone_id,
@@ -93,13 +78,7 @@ def taxi_zones() -> None:
         );
     """
 
-    conn = backoff(
-        fn=duckdb.connect,
-        retry_on=(RuntimeError, duckdb.IOException),
-        kwargs={
-            "database": os.getenv("DUCKDB_DATABASE"),
-        },
-        max_retries=10,
-    )
-    conn.execute(query)
+    with database.get_connection() as conn:
+        conn.execute(query)
+
 
