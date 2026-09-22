@@ -40,7 +40,7 @@ def taxi_zones_file() -> None:
     deps=["taxi_trips_file"],
 )
 def taxi_trips(database: DuckDBResource) -> None:
-    query = """
+    query = f"""
         create or replace table taxi_trips as (
           select
             VendorID as vendor_id,
@@ -67,7 +67,7 @@ def taxi_trips(database: DuckDBResource) -> None:
     deps=["taxi_zones_file"]
 )
 def taxi_zones(database: DuckDBResource) -> None:
-    query = """
+    query = f"""
         create or replace table zones as (
             select
                 LocationID as zone_id,
