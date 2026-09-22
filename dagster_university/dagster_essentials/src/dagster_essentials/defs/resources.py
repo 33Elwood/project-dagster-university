@@ -6,3 +6,9 @@ database_resource = DuckDBResource(
     database=dg.EnvVar("DUCKDB_DATABASE")      # replaced with environment variable
 )
 
+# src/dagster_essentials/defs/resources.py
+...
+
+@dg.definitions
+def resources() -> dg.Definitions:
+    return dg.Definitions(resources={"database": database_resource})
