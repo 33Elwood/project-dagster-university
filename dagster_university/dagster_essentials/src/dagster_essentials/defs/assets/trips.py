@@ -1,6 +1,6 @@
 # src/dagster_essentials/defs/assets/trips.py
 
-from dagster_duckdb import DuckDBResource
+import duckdb
 import os
 import dagster as dg
 from dagster._utils.backoff import backoff
@@ -39,12 +39,16 @@ def taxi_zones_file() -> None:
 
 
 
+# src/dagster_essentials/defs/assets/trips.py
 @dg.asset(
-    deps=["taxi_trips_file"],
+    deps=["taxi_trips_file"]
 )
-def taxi_trips(database: DuckDBResource) -> None:
+def taxi_trips() -> None:
+    """
+      The raw taxi trips dataset, loaded into a DuckDB database
+    """
     query = """
-        create or replace table taxi_trips as (
+        create or replace table trips as (
           select
             VendorID as vendor_id,
             PULocationID as pickup_zone_id,
@@ -60,8 +64,16 @@ def taxi_trips(database: DuckDBResource) -> None:
         );
     """
 
-    with database.get_connection() as conn:
-        conn.execute(query)
+    conn = backoff(
+        fn=duckdb.connect,
+        retry_on=(RuntimeError, duckdb.IOException),
+        kwargs={
+            "database": os.getenv("DUCKDB_DATABASE"),
+        },
+        max_retries=10,
+    )
+    conn.execute(query)
+
 
 
 
